@@ -29,7 +29,7 @@ async function getData() {
 async function getMentorData() {
   try {
     const res = await fetch(
-      'https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-10-07T00%3A00%3A00%2B03%3A00&timeMax=2024-10-14T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
+      'https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-10-07T00%3A00%3A00%2B03%3A00&timeMax=2024-10-31T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
     );
     const data = await res.json();
     return data.items;
@@ -191,18 +191,17 @@ function renderMentorSchedule(groupedData) {
   return Object.keys(groupedData)
     .map((date) => {
       const events = groupedData[date]
+        .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
         .map((event) => {
-          const mentorInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем лишнюю информацию
-          return `📝 ${event.summary}\n👨🏻‍🏫 ${mentorInfo}\n⏳ ${new Date(
-            event.start?.dateTime,
-          ).toLocaleString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
+          const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
+          const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
+          const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false,
-          })}\n`;
+          }); // Формат времени
+
+          return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
         })
         .join('\n');
       return `📅 ${date}:\n${events}`;
