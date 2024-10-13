@@ -68,10 +68,10 @@ function renderSchedule(schedule) {
 
   return schedule
     .map((event) => {
-      return `📝 ${event.summary}\n👨🏻‍🏫 ${event.description?.replace(
-        /[^a-zA-Zа-яА-ЯёЁ\s]+/g,
-        '',
-      )}\n⏳ ${new Date(event.start?.dateTime).toLocaleString('ru-RU', {
+      return `📝 ${event.summary}\n
+      ${'👨🏻‍🏫' + event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '')}\n⏳ ${new Date(
+        event.start?.dateTime,
+      ).toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
