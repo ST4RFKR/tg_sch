@@ -183,45 +183,55 @@ function groupByDay(data) {
 }
 
 // Функция для отображения расписания поддержки
-// Функция для отображения расписания поддержки
 function renderMentorSchedule(groupedData) {
   const currentDate = new Date(); // Получаем текущую дату
+  const nextWeekDate = new Date(); // Дата через 7 дней
+  nextWeekDate.setDate(currentDate.getDate() + 7); // Устанавливаем дату на 7 дней вперёд
+  const messages = []; // Массив для хранения сообщений
+  let currentMessage = ''; // Переменная для текущего сообщения
 
   if (!Object.keys(groupedData).length) {
-    return '😢 Расписание поддержки не найдено...';
+    return ['😢 Расписание поддержки не найдено...'];
   }
 
-  return (
-    Object.keys(groupedData)
-      .map((date) => {
-        // Преобразуем строку даты в объект Date
-        const eventDate = new Date(date);
+  Object.keys(groupedData).forEach((date) => {
+    const eventDate = new Date(date);
 
-        // Проверяем, если дата мероприятия в будущем
-        if (eventDate < currentDate) {
-          return null; // Пропускаем прошедшие мероприятия
-        }
+    // Проверка, что дата события находится в пределах следующей недели
+    if (eventDate < currentDate || eventDate > nextWeekDate) {
+      return; // Пропускаем прошедшие и будущие мероприятия
+    }
 
-        const events = groupedData[date]
-          .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
-          .map((event) => {
-            const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
-            const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
-            const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-            }); // Формат времени
+    const events = groupedData[date]
+      .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
+      .map((event) => {
+        const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
+        const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
+        const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }); // Формат времени
 
-            return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
-          })
-          .join('\n');
-
-        return `📅 ${date}:\n${events}`;
+        return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
       })
-      .filter(Boolean) // Убираем null значения из массива
-      .join('\n\n') || '😢 Нет будущих занятий...'
-  ); // Если нет мероприятий в будущем
+      .join('\n');
+
+    currentMessage += `📅 ${date}:\n${events}\n\n`;
+
+    // Проверка длины текущего сообщения
+    if (currentMessage.length > 4000) {
+      messages.push(currentMessage.trim()); // Сохраняем сообщение в массив
+      currentMessage = ''; // Обнуляем текущее сообщение
+    }
+  });
+
+  // Добавляем оставшееся сообщение, если есть
+  if (currentMessage) {
+    messages.push(currentMessage.trim());
+  }
+
+  return messages.length > 0 ? messages : ['😢 Нет будущих занятий...']; // Возвращаем массив сообщений
 }
 
 // Функция отправки расписания
