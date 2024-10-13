@@ -191,7 +191,13 @@ bot.on('callback_query', async (query) => {
   } else if (action === 'show_mentors') {
     await getMentorSchedule();
     const mentorScheduleMessage = renderMentorSchedule(mentorScheduleData);
-    await bot.sendMessage(chatId, mentorScheduleMessage);
+    await bot.sendMessage(chatId, mentorScheduleMessage, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Вернуться к выбору спринта', callback_data: 'return_to_sprint_selection' }],
+        ],
+      },
+    });
   } else if (action === 'return_to_sprint_selection') {
     filter = 'all';
     returnToSprintSelection(chatId);
