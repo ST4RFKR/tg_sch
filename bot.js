@@ -63,6 +63,9 @@ function renderSchedule(schedule) {
     return '😢 Занятий не найдено...';
   }
 
+  // Сортировка по дате в порядке убывания
+  schedule.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime));
+
   return schedule
     .map((event) => {
       return `📝 ${event.summary}\n👨🏻‍🏫 ${event.description?.replace(
