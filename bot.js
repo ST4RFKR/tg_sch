@@ -161,8 +161,16 @@ bot.on('callback_query', async (query) => {
     const message = renderMentorSchedule(groupedMentorData);
 
     bot.sendMessage(chatId, message);
-  } else {
-    // Обработка фильтров...
+  } // Обработчик нажатия кнопки расписания поддержки
+  else if (action === 'show_support_schedule') {
+    const mentorData = await getMentorData();
+    const groupedMentorData = groupByDay(mentorData);
+    const messages = renderMentorSchedule(groupedMentorData);
+
+    // Отправляем каждое сообщение из массива
+    for (const message of messages) {
+      await bot.sendMessage(chatId, message); // Отправляем каждую часть сообщения
+    }
   }
 });
 // Функция для группировки событий по дням
@@ -183,6 +191,7 @@ function groupByDay(data) {
 }
 
 // Функция для отображения расписания поддержки
+// Функция для отображения расписания поддержки
 function renderMentorSchedule(groupedData) {
   const currentDate = new Date(); // Получаем текущую дату
   const nextWeekDate = new Date(); // Дата через 7 дней
@@ -190,10 +199,12 @@ function renderMentorSchedule(groupedData) {
   const messages = []; // Массив для хранения сообщений
   let currentMessage = ''; // Переменная для текущего сообщения
 
+  // Проверка на наличие данных
   if (!Object.keys(groupedData).length) {
     return ['😢 Расписание поддержки не найдено...'];
   }
 
+  // Обработка событий
   Object.keys(groupedData).forEach((date) => {
     const eventDate = new Date(date);
 
@@ -217,7 +228,10 @@ function renderMentorSchedule(groupedData) {
       })
       .join('\n');
 
-    currentMessage += `📅 ${date}:\n${events}\n\n`;
+    // Добавление даты и событий в сообщение
+    if (events) {
+      currentMessage += `📅 ${date}:\n${events}\n\n`;
+    }
 
     // Проверка длины текущего сообщения
     if (currentMessage.length > 4000) {
@@ -231,7 +245,8 @@ function renderMentorSchedule(groupedData) {
     messages.push(currentMessage.trim());
   }
 
-  return messages.length > 0 ? messages : ['😢 Нет будущих занятий...']; // Возвращаем массив сообщений
+  // Возвращаем сообщения или сообщение о том, что нет будущих занятий
+  return messages.length > 0 ? messages : ['😢 Нет предстоящих занятий на следующую неделю.'];
 }
 
 // Функция отправки расписания
