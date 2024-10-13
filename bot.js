@@ -107,15 +107,39 @@ function renderSchedule(schedule) {
 }
 
 // Функция для отображения расписания менторов
-function renderMentorSchedule(schedule) {
-  if (schedule.length === 0) {
-    return '😢 Расписание менторов не найдено...';
+// Функция для отображения событий с учетом фильтрации
+function renderSchedule(schedule) {
+  if (filter === 'extra') {
+    schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
+  }
+  if (filter === 'js') {
+    schedule = schedule.filter((el) => el.summary.includes('JS Native'));
+  }
+  if (filter === 'main') {
+    schedule = schedule.filter((el) =>
+      /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
+    );
   }
 
+  if (schedule.length === 0) {
+    return '😢 Занятий не найдено...';
+  }
+
+  // Сортировка по дате в порядке возрастания
+  schedule.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
+
   const groupedByDate = schedule.reduce((acc, event) => {
-    const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
-    acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(event.summary);
+    const date = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
+    const time = new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(`${time} ${event.summary}`);
     return acc;
   }, {});
 
