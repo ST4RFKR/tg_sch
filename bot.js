@@ -3,7 +3,6 @@ import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
-
 // Токен вашего бота
 const token = process.env.TOKEN; // Замените на ваш токен
 const bot = new TelegramBot(token, { polling: true });
@@ -27,39 +26,22 @@ async function getData() {
   }
 }
 
-// Функция для получения данных с API Google Calendar с учетом диапазона дат
-async function getDataWithDateRange() {
-  try {
-    const today = new Date(); // Текущая дата
-    const maxDate = new Date('2024-10-31'); // Конечная дата - 31 октября 2024
-    const endDate = new Date(today); // Создаем копию текущей даты
-    endDate.setDate(today.getDate() + 7); // Добавляем 7 дней
-
-    // Условие, чтобы конечная дата не превышала 31 октября 2024 года
-    if (endDate > maxDate) {
-      endDate.setTime(maxDate.getTime()); // Устанавливаем конечную дату на 31 октября 2024
-    }
-
-    const timeMin = today.toISOString(); // Минимальная дата
-    const timeMax = endDate.toISOString(); // Максимальная дата
-
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/classroom102613341857294235333%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=${encodeURIComponent(
-        timeMin,
-      )}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=9999`,
-    );
-    const data = await res.json();
-    scheduleData = data.items;
-  } catch (error) {
-    console.error('Ошибка получения данных: ' + error);
-  }
-}
-
 // Инициализация данных при старте бота
 getData();
-getDataWithDateRange(); // Вызываем новую функцию для получения данных с диапазоном дат
 
-// Остальная часть вашего кода остается без изменений...
+// Функция для получения данных расписания менторов с API Google Calendar
+async function getMentorData() {
+  try {
+    const res = await fetch(
+      'https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-10-07T00%3A00%3A00%2B03%3A00&timeMax=2024-10-14T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
+    );
+    const data = await res.json();
+    return data.items;
+  } catch (error) {
+    console.error('Ошибка получения данных расписания поддержки: ' + error);
+    return [];
+  }
+}
 
 // Функция фильтрации по спринтам
 function filterBySprint(data) {
