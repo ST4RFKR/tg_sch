@@ -140,6 +140,7 @@ bot.on('callback_query', async (query) => {
     // Отправляем пользователю список занятий и фильтры
     sendSchedule(chatId, scheduleToShow);
   } else if (action === 'return_to_sprint_selection') {
+    filter = 'all';
     returnToSprintSelection(chatId);
   } else {
     // Удаляем предыдущее сообщение, если оно существует
