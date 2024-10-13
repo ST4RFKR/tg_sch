@@ -46,6 +46,7 @@ function filterBySprint(data) {
 
 // Функция для отображения событий с учетом фильтрации
 // Функция для улучшенного отображения событий (со статусом)
+// Функция для улучшенного отображения событий с улучшенной читаемостью
 function renderSchedule(schedule) {
   if (filter === 'extra') {
     schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
@@ -54,7 +55,6 @@ function renderSchedule(schedule) {
     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
   }
   if (filter === 'main') {
-    // Фильтрация основных занятий в формате "Спринт 0X - " или "Спринт 0X/online"
     schedule = schedule.filter((el) =>
       /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
     );
@@ -91,8 +91,8 @@ function renderSchedule(schedule) {
       }
 
       return (
-        `📚 **Занятие: ${event.summary}**\n\n` +
-        `👨‍🏫 **Преподаватель**: ${teacherInfo}\n\n` +
+        `📚 **Занятие**: ${event.summary}\n` +
+        `👨‍🏫 **Преподаватель**: ${teacherInfo}\n` +
         `🕒 **Дата и время**: ${startDateTime.toLocaleString('ru-RU', {
           day: '2-digit',
           month: 'long',
@@ -104,9 +104,10 @@ function renderSchedule(schedule) {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false,
-        })} (${event.start?.timeZone || 'местное время'})\n\n` +
-        `📋 **Статус**: ${statusText}\n\n` +
-        `🗒 **Описание**: ${teacherInfo ? teacherInfo : 'Нет описания'}\n`
+        })} (${event.start?.timeZone || 'местное время'})\n` +
+        `📋 **Статус**: ${statusText}\n` +
+        (teacherInfo ? `🗒 **Описание**: ${teacherInfo}\n` : '') +
+        `\n-----------------\n`
       );
     })
     .join('\n');
