@@ -121,7 +121,7 @@ function renderMentorSchedule(schedule) {
     });
 
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(`  \t${time} ${event.summary}`); // Добавлен таб перед строкой
+    acc[eventDate].push(`    \t${time} ${event.summary}`); // Добавлен таб перед строкой
     return acc;
   }, {});
 
