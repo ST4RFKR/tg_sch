@@ -2,13 +2,16 @@
 import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { format, addDays, startOfToday } from 'date-fns'; // Убедитесь, что у вас установлены date-fns
 dotenv.config();
+
 // Токен вашего бота
 const token = process.env.TOKEN; // Замените на ваш токен
 const bot = new TelegramBot(token, { polling: true });
 
 // Данные и состояния
 let scheduleData = [];
+let mentorScheduleData = [];
 let filter = 'all'; // 'all', 'extra', 'js', 'main'
 let visibleSchedule = 1;
 let lastMessageId; // Хранит ID последнего сообщения с расписанием
@@ -28,6 +31,27 @@ async function getData() {
 
 // Инициализация данных при старте бота
 getData();
+
+// Функция для получения расписания менторов
+async function getMentorSchedule() {
+  const today = startOfToday();
+  const timeMin = format(today, "yyyy-MM-dd'T'00:00:00xxx");
+  const timeMax = format(addDays(today, 7), "yyyy-MM-dd'T'00:00:00xxx");
+
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=${encodeURIComponent(
+        timeMin,
+      )}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=9999`,
+    );
+    const data = await res.json();
+    mentorScheduleData = data.items.sort(
+      (a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime),
+    );
+  } catch (error) {
+    console.error('Ошибка получения данных: ' + error);
+  }
+}
 
 // Функция фильтрации по спринтам
 function filterBySprint(data) {
@@ -53,7 +77,6 @@ function renderSchedule(schedule) {
     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
   }
   if (filter === 'main') {
-    // Фильтрация основных занятий в формате "Спринт 0X - " или "Спринт 0X/online"
     schedule = schedule.filter((el) =>
       /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
     );
@@ -63,12 +86,12 @@ function renderSchedule(schedule) {
     return '😢 Занятий не найдено...';
   }
 
-  // Сортировка по дате в порядке убывания
+  // Сортировка по дате в порядке возрастания
   schedule.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
 
   return schedule
     .map((event) => {
-      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
+      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || '';
       return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
         event.start?.dateTime,
       ).toLocaleString('ru-RU', {
@@ -83,11 +106,30 @@ function renderSchedule(schedule) {
     .join('\n');
 }
 
+// Функция для отображения расписания менторов
+function renderMentorSchedule(schedule) {
+  if (schedule.length === 0) {
+    return '😢 Расписание менторов не найдено...';
+  }
+
+  const groupedByDate = schedule.reduce((acc, event) => {
+    const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
+    acc[eventDate] = acc[eventDate] || [];
+    acc[eventDate].push(event.summary);
+    return acc;
+  }, {});
+
+  return Object.entries(groupedByDate)
+    .map(([date, events]) => {
+      return `${date}\n${events.join('\n')}`;
+    })
+    .join('\n\n');
+}
+
 // Обработчик команды /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
-  // Приветственное сообщение с командами
   const welcomeMessage = `
 👋 Привет, ${msg.from.first_name}! Добро пожаловать! 🎉
 Команды бота: 🤖
@@ -105,7 +147,10 @@ bot.onText(/\/start/, (msg) => {
           { text: 'Спринт 03', callback_data: 'sprint_3' },
           { text: 'Спринт 04', callback_data: 'sprint_4' },
         ],
-        [{ text: 'Спринт 05', callback_data: 'sprint_5' }],
+        [
+          { text: 'Спринт 05', callback_data: 'sprint_5' },
+          { text: 'Показать расписание менторов', callback_data: 'show_mentors' },
+        ],
       ],
     },
   });
@@ -124,7 +169,7 @@ bot.on('new_chat_members', (msg) => {
   });
 });
 
-// Обработчик нажатий на инлайн-кнопки (выбор спринта и фильтров)
+// Обработчик нажатий на инлайн-кнопки
 bot.on('callback_query', async (query) => {
   const chatId = query.message.chat.id;
   const action = query.data;
@@ -133,17 +178,18 @@ bot.on('callback_query', async (query) => {
   if (action.startsWith('sprint_')) {
     visibleSchedule = parseInt(action.split('_')[1]);
 
-    // Отфильтровываем данные по спринтам
     const filteredData = filterBySprint(scheduleData);
     const scheduleToShow = filteredData[`s${visibleSchedule}`];
 
-    // Отправляем пользователю список занятий и фильтры
-    sendSchedule(chatId, scheduleToShow);
+    lastMessageId = await sendSchedule(chatId, scheduleToShow);
+  } else if (action === 'show_mentors') {
+    await getMentorSchedule();
+    const mentorScheduleMessage = renderMentorSchedule(mentorScheduleData);
+    await bot.sendMessage(chatId, mentorScheduleMessage);
   } else if (action === 'return_to_sprint_selection') {
     filter = 'all';
     returnToSprintSelection(chatId);
   } else {
-    // Удаляем предыдущее сообщение, если оно существует
     if (lastMessageId) {
       try {
         await bot.deleteMessage(chatId, lastMessageId);
@@ -152,7 +198,6 @@ bot.on('callback_query', async (query) => {
       }
     }
 
-    // Обработка фильтров
     if (action === 'filter_all') {
       filter = 'all';
     } else if (action === 'filter_extra') {
@@ -163,11 +208,9 @@ bot.on('callback_query', async (query) => {
       filter = 'main';
     }
 
-    // Обновляем отображение с учетом выбранного фильтра
     const filteredData = filterBySprint(scheduleData);
     const scheduleToShow = filteredData[`s${visibleSchedule}`];
 
-    // Отправляем новое расписание и сохраняем ID сообщения
     lastMessageId = await sendSchedule(chatId, scheduleToShow);
   }
 });
@@ -180,19 +223,19 @@ async function sendSchedule(chatId, scheduleToShow) {
         [
           { text: 'Все', callback_data: 'filter_all' },
           { text: 'Основные', callback_data: 'filter_main' },
-          { text: 'Дополнительные', callback_data: 'filter_extra' },
-          { text: 'JavaScript', callback_data: 'filter_js' },
-          { text: 'Вернуться к выбору спринта', callback_data: 'return_to_sprint_selection' },
+          { text: 'Доп. занятия', callback_data: 'filter_extra' },
+          { text: 'JS', callback_data: 'filter_js' },
         ],
+        [{ text: 'Вернуться к выбору спринта', callback_data: 'return_to_sprint_selection' }],
       ],
     },
   });
-  return message.message_id; // Возвращаем ID отправленного сообщения
+  return message.message_id; // Возвращаем ID сообщения
 }
 
 // Функция возврата к выбору спринта
 function returnToSprintSelection(chatId) {
-  bot.sendMessage(chatId, 'Выберите спринт:', {
+  bot.sendMessage(chatId, 'Пожалуйста, выберите спринт:', {
     reply_markup: {
       inline_keyboard: [
         [
@@ -203,7 +246,10 @@ function returnToSprintSelection(chatId) {
           { text: 'Спринт 03', callback_data: 'sprint_3' },
           { text: 'Спринт 04', callback_data: 'sprint_4' },
         ],
-        [{ text: 'Спринт 05', callback_data: 'sprint_5' }],
+        [
+          { text: 'Спринт 05', callback_data: 'sprint_5' },
+          { text: 'Показать расписание менторов', callback_data: 'show_mentors' },
+        ],
       ],
     },
   });
