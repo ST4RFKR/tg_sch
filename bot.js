@@ -3,6 +3,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
+
 // Токен вашего бота
 const token = process.env.TOKEN; // Замените на ваш токен
 const bot = new TelegramBot(token, { polling: true });
@@ -26,12 +27,8 @@ async function getData() {
   }
 }
 
-// Инициализация данных при старте бота
-getData();
-
-// Функция для получения данных расписания менторов с API Google Calendar
-// Функция для получения данных с API Google Calendar
-async function getData() {
+// Функция для получения данных с API Google Calendar с учетом диапазона дат
+async function getDataWithDateRange() {
   try {
     const today = new Date(); // Текущая дата
     const maxDate = new Date('2024-10-31'); // Конечная дата - 31 октября 2024
@@ -57,6 +54,12 @@ async function getData() {
     console.error('Ошибка получения данных: ' + error);
   }
 }
+
+// Инициализация данных при старте бота
+getData();
+getDataWithDateRange(); // Вызываем новую функцию для получения данных с диапазоном дат
+
+// Остальная часть вашего кода остается без изменений...
 
 // Функция фильтрации по спринтам
 function filterBySprint(data) {
