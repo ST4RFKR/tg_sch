@@ -166,6 +166,7 @@ bot.on('callback_query', async (query) => {
   }
 });
 // Функция для группировки событий по дням
+// Функция для группировки событий по дням
 function groupByDay(data) {
   return data.reduce((acc, event) => {
     const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU', {
@@ -183,12 +184,16 @@ function groupByDay(data) {
 }
 
 // Функция для отображения расписания поддержки
+// Функция для отображения расписания поддержки
 function renderMentorSchedule(groupedData) {
   if (!Object.keys(groupedData).length) {
     return '😢 Расписание поддержки не найдено...';
   }
 
-  return Object.keys(groupedData)
+  // Получаем отсортированные даты
+  const sortedDates = Object.keys(groupedData).sort();
+
+  return sortedDates
     .map((date) => {
       const events = groupedData[date]
         .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
