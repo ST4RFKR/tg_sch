@@ -69,11 +69,9 @@ function renderSchedule(schedule) {
   return schedule
     .map((event) => {
       const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
-      return schedule
-        .map((event) => {
-          return `📝 ${event.summary}  
-      👨🏻‍🏫 Преподаватель: ${teacherInfo}  
-      ⏳ **Дата и время**: ${new Date(event.start?.dateTime).toLocaleString('ru-RU', {
+      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
+        event.start?.dateTime,
+      ).toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -81,8 +79,6 @@ function renderSchedule(schedule) {
         minute: '2-digit',
         hour12: false,
       })}\n`;
-        })
-        .join('\n');
     })
     .join('\n');
 }
