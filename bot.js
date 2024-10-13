@@ -29,20 +29,6 @@ async function getData() {
 // Инициализация данных при старте бота
 getData();
 
-// Функция для получения данных расписания менторов с API Google Calendar
-async function getMentorData() {
-  try {
-    const res = await fetch(
-      'https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-10-07T00%3A00%3A00%2B03%3A00&timeMax=2024-10-14T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
-    );
-    const data = await res.json();
-    return data.items;
-  } catch (error) {
-    console.error('Ошибка получения данных расписания поддержки: ' + error);
-    return [];
-  }
-}
-
 // Функция фильтрации по спринтам
 function filterBySprint(data) {
   return data.reduce(
@@ -101,6 +87,7 @@ function renderSchedule(schedule) {
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
+  // Приветственное сообщение с командами
   const welcomeMessage = `
 👋 Привет, ${msg.from.first_name}! Добро пожаловать! 🎉
 Команды бота: 🤖
@@ -119,7 +106,6 @@ bot.onText(/\/start/, (msg) => {
           { text: 'Спринт 04', callback_data: 'sprint_4' },
         ],
         [{ text: 'Спринт 05', callback_data: 'sprint_5' }],
-        [{ text: 'Показать расписание поддержки', callback_data: 'show_support_schedule' }], // Новая кнопка
       ],
     },
   });
@@ -147,72 +133,44 @@ bot.on('callback_query', async (query) => {
   if (action.startsWith('sprint_')) {
     visibleSchedule = parseInt(action.split('_')[1]);
 
+    // Отфильтровываем данные по спринтам
     const filteredData = filterBySprint(scheduleData);
     const scheduleToShow = filteredData[`s${visibleSchedule}`];
 
+    // Отправляем пользователю список занятий и фильтры
     sendSchedule(chatId, scheduleToShow);
   } else if (action === 'return_to_sprint_selection') {
     filter = 'all';
     returnToSprintSelection(chatId);
-  } else if (action === 'show_support_schedule') {
-    // Обработка нажатия кнопки расписания поддержки
-    const mentorData = await getMentorData();
-    const groupedMentorData = groupByDay(mentorData);
-    const message = renderMentorSchedule(groupedMentorData);
-
-    bot.sendMessage(chatId, message);
   } else {
-    // Обработка фильтров...
+    // Удаляем предыдущее сообщение, если оно существует
+    if (lastMessageId) {
+      try {
+        await bot.deleteMessage(chatId, lastMessageId);
+      } catch (error) {
+        console.error('Ошибка при удалении сообщения:', error);
+      }
+    }
+
+    // Обработка фильтров
+    if (action === 'filter_all') {
+      filter = 'all';
+    } else if (action === 'filter_extra') {
+      filter = 'extra';
+    } else if (action === 'filter_js') {
+      filter = 'js';
+    } else if (action === 'filter_main') {
+      filter = 'main';
+    }
+
+    // Обновляем отображение с учетом выбранного фильтра
+    const filteredData = filterBySprint(scheduleData);
+    const scheduleToShow = filteredData[`s${visibleSchedule}`];
+
+    // Отправляем новое расписание и сохраняем ID сообщения
+    lastMessageId = await sendSchedule(chatId, scheduleToShow);
   }
 });
-// Функция для группировки событий по дням
-// Функция для группировки событий по дням
-function groupByDay(data) {
-  return data.reduce((acc, event) => {
-    const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-
-    if (!acc[eventDate]) {
-      acc[eventDate] = [];
-    }
-    acc[eventDate].push(event);
-    return acc;
-  }, {});
-}
-
-// Функция для отображения расписания поддержки
-// Функция для отображения расписания поддержки
-function renderMentorSchedule(groupedData) {
-  if (!Object.keys(groupedData).length) {
-    return '😢 Расписание поддержки не найдено...';
-  }
-
-  // Получаем отсортированные даты
-  const sortedDates = Object.keys(groupedData).sort();
-
-  return sortedDates
-    .map((date) => {
-      const events = groupedData[date]
-        .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
-        .map((event) => {
-          const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
-          const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
-          const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          }); // Формат времени
-
-          return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
-        })
-        .join('\n');
-      return `📅 ${date}:\n${events}`;
-    })
-    .join('\n\n');
-}
 
 // Функция отправки расписания
 async function sendSchedule(chatId, scheduleToShow) {
