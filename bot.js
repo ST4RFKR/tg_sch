@@ -68,10 +68,8 @@ function renderSchedule(schedule) {
 
   return schedule
     .map((event) => {
-      return `📝 ${event.summary}\n👨🏻‍🏫 ${event.description?.replace(
-        /[^a-zA-Zа-яА-ЯёЁ\s]+/g,
-        '',
-      )} - ${event.teacher || 'Неизвестный учитель'}\n⏳ ${new Date(
+      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
+      return `📝 ${event.summary}\n'👨🏻‍🏫' ${teacherInfo}\n⏳ ${new Date(
         event.start?.dateTime,
       ).toLocaleString('ru-RU', {
         day: '2-digit',
