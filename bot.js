@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 // Токен вашего бота
-const token = process.env.TOKEN; // Замените на ваш токен
+const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
 // Данные и состояния
@@ -23,6 +23,19 @@ async function getData() {
     scheduleData = data.items;
   } catch (error) {
     console.error('Ошибка получения данных: ' + error);
+  }
+}
+// Функция для получения данных расписания менторов с API Google Calendar
+async function getMentorData() {
+  try {
+    const res = await fetch(
+      'https://www.googleapis.com/calendar/v3/calendars/rralfc724pumjdn5n6r1gpi7k8%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-10-07T00%3A00%3A00%2B03%3A00&timeMax=2024-10-14T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
+    );
+    const data = await res.json();
+    return data.items;
+  } catch (error) {
+    console.error('Ошибка получения данных расписания поддержки: ' + error);
+    return [];
   }
 }
 
@@ -84,10 +97,10 @@ function renderSchedule(schedule) {
 }
 
 // Обработчик команды /start
+// Обработчик команды /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
-  // Приветственное сообщение с командами
   const welcomeMessage = `
 👋 Привет, ${msg.from.first_name}! Добро пожаловать! 🎉
 Команды бота: 🤖
@@ -106,6 +119,7 @@ bot.onText(/\/start/, (msg) => {
           { text: 'Спринт 04', callback_data: 'sprint_4' },
         ],
         [{ text: 'Спринт 05', callback_data: 'sprint_5' }],
+        [{ text: 'Показать расписание поддержки', callback_data: 'show_support_schedule' }], // Новая кнопка
       ],
     },
   });
@@ -133,44 +147,68 @@ bot.on('callback_query', async (query) => {
   if (action.startsWith('sprint_')) {
     visibleSchedule = parseInt(action.split('_')[1]);
 
-    // Отфильтровываем данные по спринтам
     const filteredData = filterBySprint(scheduleData);
     const scheduleToShow = filteredData[`s${visibleSchedule}`];
 
-    // Отправляем пользователю список занятий и фильтры
     sendSchedule(chatId, scheduleToShow);
   } else if (action === 'return_to_sprint_selection') {
     filter = 'all';
     returnToSprintSelection(chatId);
+  } else if (action === 'show_support_schedule') {
+    // Обработка нажатия кнопки расписания поддержки
+    const mentorData = await getMentorData();
+    const groupedMentorData = groupByDay(mentorData);
+    const message = renderMentorSchedule(groupedMentorData);
+
+    bot.sendMessage(chatId, message);
   } else {
-    // Удаляем предыдущее сообщение, если оно существует
-    if (lastMessageId) {
-      try {
-        await bot.deleteMessage(chatId, lastMessageId);
-      } catch (error) {
-        console.error('Ошибка при удалении сообщения:', error);
-      }
-    }
-
-    // Обработка фильтров
-    if (action === 'filter_all') {
-      filter = 'all';
-    } else if (action === 'filter_extra') {
-      filter = 'extra';
-    } else if (action === 'filter_js') {
-      filter = 'js';
-    } else if (action === 'filter_main') {
-      filter = 'main';
-    }
-
-    // Обновляем отображение с учетом выбранного фильтра
-    const filteredData = filterBySprint(scheduleData);
-    const scheduleToShow = filteredData[`s${visibleSchedule}`];
-
-    // Отправляем новое расписание и сохраняем ID сообщения
-    lastMessageId = await sendSchedule(chatId, scheduleToShow);
+    // Обработка фильтров...
   }
 });
+// Функция для группировки событий по дням
+function groupByDay(data) {
+  return data.reduce((acc, event) => {
+    const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    if (!acc[eventDate]) {
+      acc[eventDate] = [];
+    }
+    acc[eventDate].push(event);
+    return acc;
+  }, {});
+}
+
+// Функция для отображения расписания поддержки
+function renderMentorSchedule(groupedData) {
+  if (!Object.keys(groupedData).length) {
+    return '😢 Расписание поддержки не найдено...';
+  }
+
+  return Object.keys(groupedData)
+    .map((date) => {
+      const events = groupedData[date]
+        .map((event) => {
+          const mentorInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем лишнюю информацию
+          return `📝 ${event.summary}\n👨🏻‍🏫 ${mentorInfo}\n⏳ ${new Date(
+            event.start?.dateTime,
+          ).toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })}\n`;
+        })
+        .join('\n');
+      return `📅 ${date}:\n${events}`;
+    })
+    .join('\n\n');
+}
 
 // Функция отправки расписания
 async function sendSchedule(chatId, scheduleToShow) {

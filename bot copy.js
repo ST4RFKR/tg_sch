@@ -1,9 +1,10 @@
 // Импорт необходимых библиотек
 import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
-
+import dotenv from 'dotenv';
+dotenv.config();
 // Токен вашего бота
-const token = '7593570544:AAHIukeoprr4T20yqQzU3UCUq90lGgUEip0'; // Замените на ваш токен
+const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
 // Данные и состояния
@@ -52,20 +53,25 @@ function renderSchedule(schedule) {
     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
   }
   if (filter === 'main') {
-    // Фильтрация основных занятий в формате "Спринт 0X/online - 0X"
-    schedule = schedule.filter((el) => /Спринт 0\d\/online - 0\d/.test(el.summary));
+    // Фильтрация основных занятий в формате "Спринт 0X - " или "Спринт 0X/online"
+    schedule = schedule.filter((el) =>
+      /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
+    );
   }
 
   if (schedule.length === 0) {
     return '😢 Занятий не найдено...';
   }
 
+  // Сортировка по дате в порядке убывания
+  schedule.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
+
   return schedule
     .map((event) => {
-      return `📝 ${event.summary}\n👨🏻‍🏫 ${event.description?.replace(
-        /[^a-zA-Zа-яА-ЯёЁ\s]+/g,
-        '',
-      )}\n⏳ ${new Date(event.start?.dateTime).toLocaleString('ru-RU', {
+      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
+      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
+        event.start?.dateTime,
+      ).toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -83,10 +89,9 @@ bot.onText(/\/start/, (msg) => {
 
   // Приветственное сообщение с командами
   const welcomeMessage = `
-👋 Привет, ${msg.from.first_name}! Добро пожаловать в нашу группу! 🎉
+👋 Привет, ${msg.from.first_name}! Добро пожаловать! 🎉
 Команды бота: 🤖
-🗓 /start - для получения расписания,
-Если тебе что-то непонятно или нужна помощь, не стесняйся задавать вопросы! 💻✨
+🗓 /start - для получения расписания 💻✨
   `;
 
   bot.sendMessage(chatId, welcomeMessage.trim(), {
@@ -135,6 +140,7 @@ bot.on('callback_query', async (query) => {
     // Отправляем пользователю список занятий и фильтры
     sendSchedule(chatId, scheduleToShow);
   } else if (action === 'return_to_sprint_selection') {
+    filter = 'all';
     returnToSprintSelection(chatId);
   } else {
     // Удаляем предыдущее сообщение, если оно существует
@@ -173,9 +179,9 @@ async function sendSchedule(chatId, scheduleToShow) {
       inline_keyboard: [
         [
           { text: 'Все', callback_data: 'filter_all' },
+          { text: 'Основные', callback_data: 'filter_main' },
           { text: 'Дополнительные', callback_data: 'filter_extra' },
           { text: 'JavaScript', callback_data: 'filter_js' },
-          { text: 'Основные', callback_data: 'filter_main' },
           { text: 'Вернуться к выбору спринта', callback_data: 'return_to_sprint_selection' },
         ],
       ],
