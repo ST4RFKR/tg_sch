@@ -121,7 +121,7 @@ function renderMentorSchedule(schedule) {
     });
 
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(`\t${time} ${event.summary}`); // Добавлен таб перед строкой
+    acc[eventDate].push(`  \t${time} ${event.summary}`); // Добавлен таб перед строкой
     return acc;
   }, {});
 
@@ -260,3 +260,17 @@ function returnToSprintSelection(chatId) {
     },
   });
 }
+
+//            19.10.2024
+// 10:00 ❗️ДЕНИС - Front + HTML/CSS
+// 10:00 👑Влад - Back (до 31 lvl включительно)
+// 12:00 🐱 Игнат - Back/Front
+// 13:30 🍬Маша - Front + HTML/CSS
+// 15:00 🐱 Игнат - Back/Front
+
+// 19.10.2024
+//    10:00 ❗️ДЕНИС - Front + HTML/CSS
+//    10:00 👑Влад - Back (до 31 lvl включительно)
+//    12:00 🐱 Игнат - Back/Front
+//    13:30 🍬Маша - Front + HTML/CSS
+//    15:00 🐱 Игнат - Back/Front
