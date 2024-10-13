@@ -106,7 +106,6 @@ function renderSchedule(schedule) {
     .join('\n');
 }
 
-// Функция для отображения расписания менторов
 function renderMentorSchedule(schedule) {
   if (schedule.length === 0) {
     return '😢 Расписание менторов не найдено...';
@@ -120,8 +119,14 @@ function renderMentorSchedule(schedule) {
       hour12: false,
     });
 
+    // Фильтрация строк, содержащих "Back", но не "Back/Front"
+    const teacherInfo = event.summary || '';
+    if (/Back(?!\/Front)/.test(teacherInfo)) {
+      return acc; // Пропускаем, если строка содержит "Back" без "Front"
+    }
+
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(`    \t${time} ${event.summary}`); // Добавлен таб перед строкой
+    acc[eventDate].push(`    \t${time} ${event.summary}`);
     return acc;
   }, {});
 
