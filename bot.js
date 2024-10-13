@@ -114,8 +114,14 @@ function renderMentorSchedule(schedule) {
 
   const groupedByDate = schedule.reduce((acc, event) => {
     const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
+    const time = new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(event.summary);
+    acc[eventDate].push(`${time} ${event.summary}`);
     return acc;
   }, {});
 
