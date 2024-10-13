@@ -45,8 +45,6 @@ function filterBySprint(data) {
 }
 
 // Функция для отображения событий с учетом фильтрации
-// Функция для улучшенного отображения событий (со статусом)
-// Функция для улучшенного отображения событий с улучшенной читаемостью
 function renderSchedule(schedule) {
   if (filter === 'extra') {
     schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
@@ -55,6 +53,7 @@ function renderSchedule(schedule) {
     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
   }
   if (filter === 'main') {
+    // Фильтрация основных занятий в формате "Спринт 0X - " или "Спринт 0X/online"
     schedule = schedule.filter((el) =>
       /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
     );
@@ -69,46 +68,17 @@ function renderSchedule(schedule) {
 
   return schedule
     .map((event) => {
-      const teacherInfo =
-        event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || 'Неизвестный преподаватель';
-      const startDateTime = new Date(event.start?.dateTime);
-      const endDateTime = new Date(event.end?.dateTime);
-
-      // Определяем статус занятия
-      let statusText = '';
-      switch (event.status) {
-        case 'confirmed':
-          statusText = '✅ Подтверждено';
-          break;
-        case 'tentative':
-          statusText = '🟡 В ожидании';
-          break;
-        case 'cancelled':
-          statusText = '❌ Отменено';
-          break;
-        default:
-          statusText = '🔄 Неизвестно';
-      }
-
-      return (
-        `📚 **Занятие**: ${event.summary}\n` +
-        `👨‍🏫 **Преподаватель**: ${teacherInfo}\n` +
-        `🕒 **Дата и время**: ${startDateTime.toLocaleString('ru-RU', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })} - ${endDateTime.toLocaleString('ru-RU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })} (${event.start?.timeZone || 'местное время'})\n` +
-        `📋 **Статус**: ${statusText}\n` +
-        (teacherInfo ? `🗒 **Описание**: ${teacherInfo}\n` : '') +
-        `\n-----------------\n`
-      );
+      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
+      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
+        event.start?.dateTime,
+      ).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })}\n`;
     })
     .join('\n');
 }
