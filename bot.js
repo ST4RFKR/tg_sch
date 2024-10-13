@@ -191,17 +191,25 @@ function renderMentorSchedule(groupedData) {
   return Object.keys(groupedData)
     .map((date) => {
       const events = groupedData[date]
-        .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
+        .sort((a, b) => new Date(a.start?.dateTime) - new Date(b.start?.dateTime)) // Сортировка по времени
         .map((event) => {
-          const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
-          const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
-          const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          }); // Формат времени
+          const summaryParts = event.summary?.split(' ') || []; // Предварительно разделяем строку summary
 
-          return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
+          // Проверка наличия данных для имени и направления
+          const mentorName = summaryParts.length > 1 ? summaryParts[1] : 'Имя не указано';
+          const mentorDirection =
+            summaryParts.length > 2 ? summaryParts[2] : 'Направление не указано';
+
+          // Проверка существования времени начала события
+          const eventTime = event.start?.dateTime
+            ? new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })
+            : 'Время не указано'; // Подставляем сообщение, если время отсутствует
+
+          return `📝 ${event.summary || 'Без описания'} ⏳ ${eventTime}\n`;
         })
         .join('\n');
       return `📅 ${date}:\n${events}`;
