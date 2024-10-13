@@ -45,6 +45,7 @@ function filterBySprint(data) {
 }
 
 // Функция для отображения событий с учетом фильтрации
+// Функция для улучшенного отображения событий (со статусом)
 function renderSchedule(schedule) {
   if (filter === 'extra') {
     schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
@@ -68,17 +69,45 @@ function renderSchedule(schedule) {
 
   return schedule
     .map((event) => {
-      const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || ''; // Убираем неизвестного учителя
-      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
-        event.start?.dateTime,
-      ).toLocaleString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })}\n`;
+      const teacherInfo =
+        event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || 'Неизвестный преподаватель';
+      const startDateTime = new Date(event.start?.dateTime);
+      const endDateTime = new Date(event.end?.dateTime);
+
+      // Определяем статус занятия
+      let statusText = '';
+      switch (event.status) {
+        case 'confirmed':
+          statusText = '✅ Подтверждено';
+          break;
+        case 'tentative':
+          statusText = '🟡 В ожидании';
+          break;
+        case 'cancelled':
+          statusText = '❌ Отменено';
+          break;
+        default:
+          statusText = '🔄 Неизвестно';
+      }
+
+      return (
+        `📚 **Занятие: ${event.summary}**\n\n` +
+        `👨‍🏫 **Преподаватель**: ${teacherInfo}\n\n` +
+        `🕒 **Дата и время**: ${startDateTime.toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })} - ${endDateTime.toLocaleString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })} (${event.start?.timeZone || 'местное время'})\n\n` +
+        `📋 **Статус**: ${statusText}\n\n` +
+        `🗒 **Описание**: ${teacherInfo ? teacherInfo : 'Нет описания'}\n`
+      );
     })
     .join('\n');
 }
