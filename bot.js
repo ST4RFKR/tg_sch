@@ -64,7 +64,7 @@ function renderSchedule(schedule) {
   }
 
   // Сортировка по дате в порядке убывания
-  schedule.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime));
+  schedule.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
 
   return schedule
     .map((event) => {
