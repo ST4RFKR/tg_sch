@@ -183,38 +183,45 @@ function groupByDay(data) {
 }
 
 // Функция для отображения расписания поддержки
+// Функция для отображения расписания поддержки
 function renderMentorSchedule(groupedData) {
+  const currentDate = new Date(); // Получаем текущую дату
+
   if (!Object.keys(groupedData).length) {
     return '😢 Расписание поддержки не найдено...';
   }
 
-  return Object.keys(groupedData)
-    .map((date) => {
-      const events = groupedData[date]
-        .sort((a, b) => new Date(a.start?.dateTime) - new Date(b.start?.dateTime)) // Сортировка по времени
-        .map((event) => {
-          const summaryParts = event.summary?.split(' ') || []; // Предварительно разделяем строку summary
+  return (
+    Object.keys(groupedData)
+      .map((date) => {
+        // Преобразуем строку даты в объект Date
+        const eventDate = new Date(date);
 
-          // Проверка наличия данных для имени и направления
-          const mentorName = summaryParts.length > 1 ? summaryParts[1] : 'Имя не указано';
-          const mentorDirection =
-            summaryParts.length > 2 ? summaryParts[2] : 'Направление не указано';
+        // Проверяем, если дата мероприятия в будущем
+        if (eventDate < currentDate) {
+          return null; // Пропускаем прошедшие мероприятия
+        }
 
-          // Проверка существования времени начала события
-          const eventTime = event.start?.dateTime
-            ? new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-              })
-            : 'Время не указано'; // Подставляем сообщение, если время отсутствует
+        const events = groupedData[date]
+          .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)) // Сортировка по времени
+          .map((event) => {
+            const mentorName = event.summary.split(' ')[1]; // Извлекаем имя ментора
+            const mentorDirection = event.summary.split(' ')[2]; // Извлекаем направление (Back или Front)
+            const eventTime = new Date(event.start?.dateTime).toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }); // Формат времени
 
-          return `📝 ${event.summary || 'Без описания'} ⏳ ${eventTime}\n`;
-        })
-        .join('\n');
-      return `📅 ${date}:\n${events}`;
-    })
-    .join('\n\n');
+            return `📝 ${event.summary} ⏳ ${eventTime}\n`; // Отображение имени, направления и времени
+          })
+          .join('\n');
+
+        return `📅 ${date}:\n${events}`;
+      })
+      .filter(Boolean) // Убираем null значения из массива
+      .join('\n\n') || '😢 Нет будущих занятий...'
+  ); // Если нет мероприятий в будущем
 }
 
 // Функция отправки расписания
