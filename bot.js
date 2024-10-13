@@ -53,8 +53,10 @@ function renderSchedule(schedule) {
     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
   }
   if (filter === 'main') {
-    // Фильтрация основных занятий в формате "Спринт 0X/online - 0X"
-    schedule = schedule.filter((el) => /Спринт 0\d\/online - 0\d/.test(el.summary));
+    if (filter === 'main') {
+      // Фильтрация основных занятий в формате "Спринт 0X/online - 0X" или "Спринт 0X - 09"
+      schedule = schedule.filter((el) => /Спринт 0\d+(\/online - 0\d+|- \d{2})/.test(el.summary));
+    }
   }
 
   if (schedule.length === 0) {
