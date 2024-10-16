@@ -147,15 +147,53 @@ function renderSchedule(schedule) {
     .join('\n');
 }
 
+// function renderMentorSchedule(schedule) {
+//   if (schedule.length === 0) {
+//     return '😢 Расписание менторов не найдено...';
+//   }
+
+//   const groupedByDate = schedule.reduce((acc, event) => {
+//     const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
+//     eventDate.setHours(eventDate.getHours() + 3);
+//     const time = new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
+//       hour: '2-digit',
+//       minute: '2-digit',
+//       hour12: false,
+//     });
+
+//     // Фильтрация строк, содержащих "Back", но не "Back/Front"
+//     const teacherInfo = event.summary || '';
+//     if (/Back(?!\/Front)/.test(teacherInfo)) {
+//       return acc; // Пропускаем, если строка содержит "Back" без "Front"
+//     }
+
+//     acc[eventDate] = acc[eventDate] || [];
+//     acc[eventDate].push(`    \t${time} ${event.summary}`);
+//     return acc;
+//   }, {});
+
+//   return Object.entries(groupedByDate)
+//     .map(([date, events]) => {
+//       return `${date}\n${events.join('\n')}`;
+//     })
+//     .join('\n\n');
+// }
+
+// Обработчик команды /start
 function renderMentorSchedule(schedule) {
   if (schedule.length === 0) {
     return '😢 Расписание менторов не найдено...';
   }
 
   const groupedByDate = schedule.reduce((acc, event) => {
-    const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
-    eventDate.setHours(eventDate.getHours() + 3);
-    const time = new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
+    const eventStart = new Date(event.start.dateTime);
+
+    // Добавляем смещение в 3 часа ко времени события
+    eventStart.setHours(eventStart.getHours() + 3);
+
+    // Форматирование даты и времени с учётом смещения
+    const eventDate = eventStart.toLocaleDateString('ru-RU');
+    const time = eventStart.toLocaleTimeString('ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
@@ -179,7 +217,6 @@ function renderMentorSchedule(schedule) {
     .join('\n\n');
 }
 
-// Обработчик команды /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
