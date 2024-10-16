@@ -69,6 +69,42 @@ function filterBySprint(data) {
 }
 
 // Функция для отображения событий с учетом фильтрации
+// function renderSchedule(schedule) {
+//   if (filter === 'extra') {
+//     schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
+//   }
+//   if (filter === 'js') {
+//     schedule = schedule.filter((el) => el.summary.includes('JS Native'));
+//   }
+//   if (filter === 'main') {
+//     schedule = schedule.filter((el) =>
+//       /Спринт 0\d+\s*-\s*|\s*Спринт 0\d+\/online/.test(el.summary),
+//     );
+//   }
+
+//   if (schedule.length === 0) {
+//     return '😢 Занятий не найдено...';
+//   }
+
+//   // Сортировка по дате в порядке возрастания
+//   schedule.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
+
+//   return schedule
+//     .map((event) => {
+//       const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || '';
+//       return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
+//         event.start?.dateTime,
+//       ).toLocaleString('ru-RU', {
+//         day: '2-digit',
+//         month: '2-digit',
+//         year: 'numeric',
+//         hour: '2-digit',
+//         minute: '2-digit',
+//         hour12: false,
+//       })}\n`;
+//     })
+//     .join('\n');
+// }
 function renderSchedule(schedule) {
   if (filter === 'extra') {
     schedule = schedule.filter((el) => el.summary.includes('доп.занятие'));
@@ -92,9 +128,14 @@ function renderSchedule(schedule) {
   return schedule
     .map((event) => {
       const teacherInfo = event.description?.replace(/[^a-zA-Zа-яА-ЯёЁ\s]+/g, '') || '';
-      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${new Date(
-        event.start?.dateTime,
-      ).toLocaleString('ru-RU', {
+
+      // Парсинг времени события
+      const eventDate = new Date(event.start?.dateTime);
+
+      // Добавляем смещение в 3 часа к исходному времени
+      eventDate.setHours(eventDate.getHours() + 3); // Добавляем 3 часа
+
+      return `📝 ${event.summary}\n👨🏻‍🏫 ${teacherInfo}\n⏳ ${eventDate.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -128,7 +169,7 @@ function renderMentorSchedule(schedule) {
     }
 
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(`    \t${newOffset} ${event.summary}`);
+    acc[eventDate].push(`    \t${time} ${event.summary}`);
     return acc;
   }, {});
 
