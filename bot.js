@@ -2,7 +2,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { format, addDays, startOfToday } from 'date-fns'; // Убедитесь, что у вас установлены date-fns
+import { format, addDays, startOfToday, setHours } from 'date-fns'; // Убедитесь, что у вас установлены date-fns
 dotenv.config();
 
 // Токен вашего бота
@@ -154,6 +154,7 @@ function renderMentorSchedule(schedule) {
 
   const groupedByDate = schedule.reduce((acc, event) => {
     const eventDate = new Date(event.start.dateTime).toLocaleDateString('ru-RU');
+    eventDate.setHours(eventDate.getHours() + 3);
     const time = new Date(event.start.dateTime).toLocaleTimeString('ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
