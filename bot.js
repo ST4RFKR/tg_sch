@@ -159,7 +159,6 @@ function renderMentorSchedule(schedule) {
       minute: '2-digit',
       hour12: false,
     });
-    ё;
 
     // Фильтрация строк, содержащих "Back", но не "Back/Front"
     const teacherInfo = event.summary || '';
