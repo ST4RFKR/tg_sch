@@ -118,7 +118,9 @@ function renderMentorSchedule(schedule) {
       minute: '2-digit',
       hour12: false,
     });
-
+    ё;
+    const offsetMinutes = time.getTimezoneOffset(); // Текущее смещение в минутах
+    const newOffset = offsetMinutes - 180;
     // Фильтрация строк, содержащих "Back", но не "Back/Front"
     const teacherInfo = event.summary || '';
     if (/Back(?!\/Front)/.test(teacherInfo)) {
@@ -126,7 +128,7 @@ function renderMentorSchedule(schedule) {
     }
 
     acc[eventDate] = acc[eventDate] || [];
-    acc[eventDate].push(`    \t${time} ${event.summary}`);
+    acc[eventDate].push(`    \t${newOffset} ${event.summary}`);
     return acc;
   }, {});
 
