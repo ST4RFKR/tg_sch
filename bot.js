@@ -160,8 +160,7 @@ function renderMentorSchedule(schedule) {
       hour12: false,
     });
     ё;
-    const offsetMinutes = time.getTimezoneOffset(); // Текущее смещение в минутах
-    const newOffset = offsetMinutes - 180;
+
     // Фильтрация строк, содержащих "Back", но не "Back/Front"
     const teacherInfo = event.summary || '';
     if (/Back(?!\/Front)/.test(teacherInfo)) {
