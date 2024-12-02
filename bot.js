@@ -20,7 +20,7 @@ let lastMessageId; // Хранит ID последнего сообщения с
 async function getData() {
   try {
     const res = await fetch(
-      'https://www.googleapis.com/calendar/v3/calendars/classroom102613341857294235333%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-11-01T00%3A00%3A00%2B03%3A00&timeMax=2024-11-30T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
+      'https://www.googleapis.com/calendar/v3/calendars/classroom102613341857294235333%40group.calendar.google.com/events?key=AIzaSyB-JSBKuhkxr0ZaMf-ZXbho0YM13O-GwbY&timeMin=2024-12-01T00%3A00%3A00%2B03%3A00&timeMax=2024-12-31T00%3A00%3A00%2B03%3A00&singleEvents=true&maxResults=9999',
     );
     const data = await res.json();
     scheduleData = data.items;
